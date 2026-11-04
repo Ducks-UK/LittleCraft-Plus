@@ -1,22 +1,32 @@
-name: LittleCraft Plus build
+
+name: LittleCraft Plus Build
 
 on:
   push:
     branches:
-      - '**'
+      - main
+      - copilot/initial-addon
+    tags:
+      - 'v*'
   pull_request:
+    branches:
+      - main
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
+    name: Build NeoForge Mod
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out source
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Java 25
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '25'
@@ -26,13 +36,20 @@ jobs:
         with:
           gradle-version: '9.2.1'
 
-      - name: Build addon
+      - name: Build LittleCraft Plus
         run: gradle build --no-daemon --stacktrace
 
-      - name: Upload addon JAR
+      - name: Upload mod JAR
         uses: actions/upload-artifact@v4
         with:
-          name: littlecraftplus-${{ github.sha }}
+          name: LittleCraft-Plus
           path: build/libs/*.jar
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/libs/*.jar
+          generate_release_notes: true
