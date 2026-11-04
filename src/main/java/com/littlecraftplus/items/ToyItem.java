@@ -11,35 +11,36 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 
 public class ToyItem extends Item {
-    private final int cooldown;
-    private final boolean duck;
+    private final int cooldownTicks;
+    private final boolean rubberDuck;
 
-    public ToyItem(Properties properties, int cooldown, boolean duck) {
+    public ToyItem(Properties properties, int cooldownTicks, boolean rubberDuck) {
         super(properties);
-        this.cooldown = cooldown;
-        this.duck = duck;
+        this.cooldownTicks = Math.max(0, cooldownTicks);
+        this.rubberDuck = rubberDuck;
     }
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
         Player player = context.getPlayer();
-
         if (player == null) {
             return InteractionResult.PASS;
         }
 
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             level.playSound(
                 null,
                 player.blockPosition(),
-                duck ? SoundEvents.CHICKEN_AMBIENT : SoundEvents.WOOL_HIT,
+                SoundEvents.WOOL_HIT,
                 SoundSource.PLAYERS,
                 0.8F,
-                duck ? 1.35F : 1.0F
+                rubberDuck ? 1.5F : 1.0F
             );
 
-            player.getCooldowns().addCooldown(this, cooldown);
+            if (cooldownTicks > 0) {
+                player.getCooldowns().addCooldown(context.getItemInHand(), cooldownTicks);
+            }
         }
 
         return InteractionResult.SUCCESS;
