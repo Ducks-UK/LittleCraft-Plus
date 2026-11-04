@@ -1,4 +1,3 @@
-
 package com.littlecraftplus.items;
 
 import net.minecraft.sounds.SoundEvents;
@@ -44,10 +43,9 @@ public class ConsumableRoleplayItem extends Item {
             Level level,
             Player player,
             InteractionHand hand) {
-
         ItemStack stack = player.getItemInHand(hand);
-
-        return ItemUtils.startUsingInstantly(level, player, hand);
+        player.startUsingItem(hand);
+        return InteractionResultHolder.consume(stack);
     }
 
     @Override
@@ -56,29 +54,17 @@ public class ConsumableRoleplayItem extends Item {
             Level level,
             LivingEntity entity) {
 
-        if (!level.isClientSide()) {
-            if (animation == ItemUseAnimation.DRINK) {
-                level.playSound(
-                    null,
-                    entity.blockPosition(),
-                    SoundEvents.GENERIC_DRINK.value(),
-                    SoundSource.PLAYERS,
-                    1.0F,
-                    1.0F
-                );
-            } else {
-                level.playSound(
-                    null,
-                    entity.blockPosition(),
-                    SoundEvents.GENERIC_EAT.value(),
-                    SoundSource.PLAYERS,
-                    1.0F,
-                    1.0F
-                );
-            }
+        if (!level.isClientSide) {
+            level.playSound(
+                null,
+                entity.blockPosition(),
+                animation == ItemUseAnimation.DRINK ? SoundEvents.GENERIC_DRINK : SoundEvents.GENERIC_EAT,
+                SoundSource.PLAYERS,
+                0.75F,
+                1.0F
+            );
 
-            if (singleUse && entity instanceof Player player
-                    && !player.getAbilities().instabuild) {
+            if (singleUse && entity instanceof Player player && !player.getAbilities().instabuild) {
                 stack.shrink(1);
             }
         }
