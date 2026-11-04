@@ -1,4 +1,3 @@
-
 package com.littlecraftplus.items;
 
 import net.minecraft.sounds.SoundEvents;
@@ -30,20 +29,17 @@ public class ToyItem extends Item {
             return InteractionResult.PASS;
         }
 
-        if (!level.isClientSide()) {
+        if (!level.isClientSide) {
             level.playSound(
                 null,
                 player.blockPosition(),
-                SoundEvents.CHICKEN_AMBIENT,
+                duck ? SoundEvents.CHICKEN_AMBIENT : SoundEvents.WOOL_HIT,
                 SoundSource.PLAYERS,
                 0.8F,
-                duck ? 1.5F : 1.0F
+                duck ? 1.35F : 1.0F
             );
 
-            player.getCooldowns().addCooldown(
-                context.getItemInHand(),
-                cooldown
-            );
+            player.getCooldowns().addCooldown(this, cooldown);
         }
 
         return InteractionResult.SUCCESS;
