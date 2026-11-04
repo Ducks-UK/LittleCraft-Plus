@@ -1,16 +1,16 @@
+
 package com.littlecraftplus.items;
 
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 
-/** Reusable, server-authoritative toy interaction with a short cooldown. */
 public class ToyItem extends Item {
     private final int cooldown;
     private final boolean duck;
@@ -22,20 +22,35 @@ public class ToyItem extends Item {
     }
 
     @Override
-    public InteractionResult use(Level level, Player player, InteractionHand hand) {
-        ItemStack held = player.getItemInHand(hand);
-        player.startUsingItem(hand);
-        if (!level.isClientSide) {
-            level.playSound(null, player.blockPosition(), duck ? SoundEvents.CHICKEN_AMBIENT : SoundEvents.WOOL_HIT,
-                    SoundSource.PLAYERS, 0.8F, duck ? 1.35F : 1.0F);
-            player.getCooldowns().addCooldown(this, cooldown);
+    public InteractionResult useOn(UseOnContext context) {
+        Level level = context.getLevel();
+        Player player = context.getPlayer();
+
+        if (player == null) {
+            return InteractionResult.PASS;
         }
-        return InteractionResult.CONSUME;
+
+        if (!level.isClientSide()) {
+            level.playSound(
+                null,
+                player.blockPosition(),
+                SoundEvents.CHICKEN_AMBIENT,
+                SoundSource.PLAYERS,
+                0.8F,
+                duck ? 1.5F : 1.0F
+            );
+
+            player.getCooldowns().addCooldown(
+                context.getItemInHand(),
+                cooldown
+            );
+        }
+
+        return InteractionResult.SUCCESS;
     }
 
     @Override
-    public int getUseDuration(ItemStack stack, net.minecraft.world.entity.LivingEntity entity) { return 12; }
-
-    @Override
-    public ItemUseAnimation getUseAnimation(ItemStack stack) { return ItemUseAnimation.TOUCH; }
+    public ItemUseAnimation getUseAnimation(ItemStack stack) {
+        return ItemUseAnimation.NONE;
+    }
 }
