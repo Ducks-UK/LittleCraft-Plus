@@ -1,8 +1,12 @@
 package com.littlecraftplus.registry;
 
 import com.littlecraftplus.LittleCraftPlus;
+import com.littlecraftplus.block.DiaperBagBlock;
+import com.littlecraftplus.block.DiaperBagBlockEntity;
+import com.littlecraftplus.block.HighChairBlock;
 import com.littlecraftplus.items.ConsumableRoleplayItem;
 import com.littlecraftplus.items.ToyItem;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemUseAnimation;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -19,7 +23,7 @@ public final class ModItems {
     /** All registered items in registration order. */
     public static final Map<String, DeferredItem<Item>> ALL = new LinkedHashMap<>();
 
-    /** Direct handle for code that needs the rubber duck item. */
+    /** Direct handle used as the creative tab icon. */
     public static final DeferredItem<Item> RUBBER_DUCK;
 
     private ModItems() {}
@@ -35,12 +39,8 @@ public final class ModItems {
 
     private static DeferredItem<Item> food(String id, ItemUseAnimation animation) {
         return put(id, ITEMS.registerItem(id, properties ->
-                new ConsumableRoleplayItem(
-                        properties,
-                        animation,
-                        animation == ItemUseAnimation.DRINK ? 32 : 24,
-                        true
-                )));
+                new ConsumableRoleplayItem(properties, animation,
+                        animation == ItemUseAnimation.DRINK ? 32 : 24, true)));
     }
 
     private static DeferredItem<Item> toy(String id, int cooldownTicks, boolean duck) {
@@ -48,9 +48,11 @@ public final class ModItems {
                 new ToyItem(properties, cooldownTicks, duck)));
     }
 
+    private static DeferredItem<Item> blockItem(String id, java.util.function.Supplier<? extends net.minecraft.world.level.block.Block> block) {
+        return put(id, ITEMS.registerItem(id, properties -> new BlockItem(block.get(), properties)));
+    }
+
     static {
-        // LittleCraft 3.2.5 checks the completed item's EAT/DRINK animation,
-        // looks up its item id, and loads the matching food_effects JSON.
         food("coffee", ItemUseAnimation.DRINK);
         food("iced_coffee", ItemUseAnimation.DRINK);
         food("hot_chocolate", ItemUseAnimation.DRINK);
@@ -70,9 +72,7 @@ public final class ModItems {
         food("pancakes", ItemUseAnimation.EAT);
         food("cereal_bowl", ItemUseAnimation.EAT);
 
-        // Keep the DeferredItem returned by registerItem directly.
         RUBBER_DUCK = toy("rubber_duck", 12, true);
-
         toy("teddy_bear", 12, false);
         toy("bunny_plushie", 12, false);
         toy("cat_plushie", 12, false);
@@ -90,13 +90,13 @@ public final class ModItems {
         toy("teething_ring", 10, false);
         toy("baby_rattle", 8, false);
 
-        // These remain registered as ordinary items until their dedicated
-        // container, wearable, or interaction implementations are added.
+        plain("diaper");
         plain("baby_blanket");
         plain("storybook");
         plain("pacifier_clip");
         plain("baby_wipes");
-        plain("diaper_bag");
         plain("sippy_cup");
+        blockItem("high_chair", ModBlocks.HIGH_CHAIR);
+        blockItem("diaper_bag", ModBlocks.DIAPER_BAG);
     }
 }

@@ -6,8 +6,9 @@ import com.littlecraftplus.block.DiaperBagBlockEntity;
 import com.littlecraftplus.block.HighChairBlock;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.neoforged.neoforge.registries.DeferredBlock;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 public final class ModBlocks {
@@ -16,15 +17,18 @@ public final class ModBlocks {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITY_TYPES =
             DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, LittleCraftPlus.MOD_ID);
 
-    public static final var HIGH_CHAIR = BLOCKS.registerBlock(
+    public static final DeferredBlock<HighChairBlock> HIGH_CHAIR = BLOCKS.registerBlock(
             "high_chair", HighChairBlock::new,
             properties -> properties.strength(1.0F).noOcclusion());
-    public static final var DIAPER_BAG = BLOCKS.registerBlock(
+
+    public static final DeferredBlock<DiaperBagBlock> DIAPER_BAG = BLOCKS.registerBlock(
             "diaper_bag", DiaperBagBlock::new,
             properties -> properties.strength(1.0F).noOcclusion());
 
-    public static final var DIAPER_BAG_ENTITY = BLOCK_ENTITY_TYPES.register(
-            "diaper_bag", () -> new BlockEntityType<>(DiaperBagBlockEntity::new, DIAPER_BAG.get()));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<DiaperBagBlockEntity>> DIAPER_BAG_ENTITY =
+            BLOCK_ENTITY_TYPES.register(
+                    "diaper_bag",
+                    () -> new BlockEntityType<>(DiaperBagBlockEntity::new, DIAPER_BAG.get()));
 
     private ModBlocks() {}
 }

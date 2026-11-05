@@ -19,7 +19,7 @@ public final class ModCreativeTabs {
                     .icon(() -> new ItemStack(ModItems.RUBBER_DUCK.get()))
                     .displayItems((parameters, output) -> {
                         ModItems.ALL.values().forEach(item -> output.accept(item.get()));
-                        output.accept(DiaperBagBlock.bagStack(10));
+                        output.accept(DiaperBagBlock.bagStack(DiaperBagBlockEntity.CAPACITY));
                     })
                     .build());
 
