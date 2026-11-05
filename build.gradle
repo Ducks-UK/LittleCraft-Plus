@@ -3,6 +3,11 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.147'
 }
 
+import groovy.json.JsonOutput
+import java.awt.Color
+import java.awt.image.BufferedImage
+import javax.imageio.ImageIO
+
 group = mod_group_id
 version = mod_version
 
@@ -71,6 +76,108 @@ def generateModMetadata = tasks.register('generateModMetadata', ProcessResources
 
 sourceSets.main.resources.srcDir(generateModMetadata)
 neoForge.ideSyncTask generateModMetadata
+
+// Generate original pixel-art textures, 3D block models, and one recipe for
+// every registered item/block. Generated resources are included in the jar.
+def generateLittleCraftAssets = tasks.register('generateLittleCraftAssets') {
+    def outputRoot = layout.projectDirectory.dir('src/generated/resources').asFile
+    outputs.dir(outputRoot)
+
+    doLast {
+        def itemIds = [
+                'coffee', 'iced_coffee', 'hot_chocolate', 'vanilla_latte', 'strawberry_milk',
+                'babyccino', 'chocolate_milk', 'apple_juice', 'orange_juice', 'warm_milk',
+                'baby_food_jar', 'applesauce', 'baby_biscuits', 'cookies', 'cupcake', 'pancakes',
+                'cereal_bowl', 'rubber_duck', 'teddy_bear', 'bunny_plushie', 'cat_plushie',
+                'elephant_plushie', 'dinosaur_plushie', 'frog_plushie', 'puppy_plushie', 'rattle',
+                'building_blocks', 'toy_train', 'toy_ball', 'musical_toy', 'stuffed_star',
+                'toy_mobile', 'teething_ring', 'baby_rattle', 'diaper', 'baby_blanket', 'storybook',
+                'pacifier_clip', 'baby_wipes', 'sippy_cup', 'high_chair', 'diaper_bag'
+        ]
+        def assetDir = new File(outputRoot, 'assets/littlecraftplus')
+        def textureDir = new File(assetDir, 'textures/item')
+        def blockTextureDir = new File(assetDir, 'textures/block')
+        def itemDefinitionDir = new File(assetDir, 'items')
+        def itemModelDir = new File(assetDir, 'models/item')
+        def blockModelDir = new File(assetDir, 'models/block')
+        def blockStateDir = new File(assetDir, 'blockstates')
+        [textureDir, blockTextureDir, itemDefinitionDir, itemModelDir, blockModelDir, blockStateDir].each { it.mkdirs() }
+
+        // Small, intentionally pixelated, distinct palettes/patterns per item.
+        def writeTexture = { File file, String key ->
+            int hash = key.hashCode()
+            float hue = (Math.abs(hash % 360)) / 360.0f
+            Color main = Color.getHSBColor(hue, 0.68f, 0.92f)
+            Color shade = Color.getHSBColor(hue, 0.78f, 0.52f)
+            Color accent = Color.getHSBColor((hue + 0.42f) % 1.0f, 0.55f, 1.0f)
+            def image = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB)
+            for (int y = 0; y < 16; y++) {
+                for (int x = 0; x < 16; x++) {
+                    boolean silhouette = x >= 3 && x <= 12 && y >= 2 && y <= 13
+                    if (!silhouette) continue
+                    Color pixel = ((x + y + Math.abs(hash)) % 5 == 0) ? shade : main
+                    if ((x * 3 + y + Math.abs(hash >> 4)) % 13 == 0) pixel = accent
+                    if (y == 13 || x == 3 || x == 12) pixel = shade
+                    image.setRGB(x, y, pixel.getRGB())
+                }
+            }
+            ImageIO.write(image, 'png', file)
+        }
+
+        itemIds.each { id ->
+            writeTexture(new File(textureDir, "${id}.png"), id)
+            def itemModel = id in ['high_chair', 'diaper_bag']
+                    ? [parent: "littlecraftplus:block/${id}"]
+                    : [parent: 'minecraft:item/generated', textures: [layer0: "littlecraftplus:item/${id}"]]
+            new File(itemModelDir, "${id}.json").text = JsonOutput.prettyPrint(JsonOutput.toJson(itemModel))
+            new File(itemDefinitionDir, "${id}.json").text = JsonOutput.prettyPrint(JsonOutput.toJson([
+                    model: [type: 'minecraft:model', model: "littlecraftplus:item/${id}"]
+            ]))
+
+            def recipe = [
+                    type: 'minecraft:crafting_shapeless',
+                    ingredients: [
+                            [item: 'minecraft:paper'],
+                            [item: 'minecraft:string'],
+                            [item: 'minecraft:wool']
+                    ],
+                    result: [id: "littlecraftplus:${id}", count: 1]
+            ]
+            def recipeFile = new File(outputRoot, "data/littlecraftplus/recipe/${id}.json")
+            recipeFile.parentFile.mkdirs()
+            recipeFile.text = JsonOutput.prettyPrint(JsonOutput.toJson(recipe))
+        }
+
+        ['high_chair', 'diaper_bag'].each { id ->
+            writeTexture(new File(blockTextureDir, "${id}.png"), "block_${id}")
+            def common = [
+                    parent: 'minecraft:block/block',
+                    textures: [particle: "littlecraftplus:block/${id}", all: "littlecraftplus:block/${id}"],
+                    elements: id == 'high_chair' ? [
+                            [from: [2, 0, 2], to: [4, 10, 4], faces: [north: [texture: '#all'], south: [texture: '#all'], east: [texture: '#all'], west: [texture: '#all'], up: [texture: '#all'], down: [texture: '#all']]],
+                            [from: [12, 0, 2], to: [14, 10, 4], faces: [north: [texture: '#all'], south: [texture: '#all'], east: [texture: '#all'], west: [texture: '#all'], up: [texture: '#all'], down: [texture: '#all']]],
+                            [from: [2, 0, 12], to: [4, 10, 14], faces: [north: [texture: '#all'], south: [texture: '#all'], east: [texture: '#all'], west: [texture: '#all'], up: [texture: '#all'], down: [texture: '#all']]],
+                            [from: [12, 0, 12], to: [14, 10, 14], faces: [north: [texture: '#all'], south: [texture: '#all'], east: [texture: '#all'], west: [texture: '#all'], up: [texture: '#all'], down: [texture: '#all']]],
+                            [from: [2, 9, 2], to: [14, 11, 14], faces: [north: [texture: '#all'], south: [texture: '#all'], east: [texture: '#all'], west: [texture: '#all'], up: [texture: '#all'], down: [texture: '#all']]],
+                            [from: [2, 10, 12], to: [14, 16, 14], faces: [north: [texture: '#all'], south: [texture: '#all'], east: [texture: '#all'], west: [texture: '#all'], up: [texture: '#all'], down: [texture: '#all']]],
+                            [from: [3, 10, 4], to: [13, 12, 7], faces: [north: [texture: '#all'], south: [texture: '#all'], east: [texture: '#all'], west: [texture: '#all'], up: [texture: '#all'], down: [texture: '#all']]]
+                    ] : [
+                            [from: [2, 2, 3], to: [14, 13, 13], faces: [north: [texture: '#all'], south: [texture: '#all'], east: [texture: '#all'], west: [texture: '#all'], up: [texture: '#all'], down: [texture: '#all']]],
+                            [from: [3, 10, 2], to: [13, 14, 3], faces: [north: [texture: '#all'], south: [texture: '#all'], east: [texture: '#all'], west: [texture: '#all'], up: [texture: '#all'], down: [texture: '#all']]],
+                            [from: [5, 0, 4], to: [11, 2, 12], faces: [north: [texture: '#all'], south: [texture: '#all'], east: [texture: '#all'], west: [texture: '#all'], up: [texture: '#all'], down: [texture: '#all']]]
+                    ]
+            ]
+            new File(blockModelDir, "${id}.json").text = JsonOutput.prettyPrint(JsonOutput.toJson(common))
+            new File(blockStateDir, "${id}.json").text = JsonOutput.prettyPrint(JsonOutput.toJson([
+                    variants: ['': [model: "littlecraftplus:block/${id}"]]
+            ]))
+        }
+    }
+}
+
+tasks.named('processResources').configure {
+    dependsOn(generateLittleCraftAssets)
+}
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
