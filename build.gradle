@@ -55,7 +55,7 @@ def generateModMetadata = tasks.register('generateModMetadata', ProcessResources
             mod_name               : mod_name,
             mod_license            : mod_license,
             mod_version            : mod_version,
-            mod_authors            : mod_authors,
+            mod_authors             : mod_authors,
             mod_description        : mod_description
     ]
     inputs.properties replaceProperties
@@ -68,8 +68,8 @@ sourceSets.main.resources.srcDir(generateModMetadata)
 neoForge.ideSyncTask generateModMetadata
 
 // Generate original item textures, decorative block models, and recipes into
-// build/ instead of the source tree. The task provider is also the resource
-// source, so Gradle automatically orders processResources and sourcesJar after it.
+// build/ instead of the source tree. Register task-backed output as a resource
+// source so Gradle orders resource and source-jar tasks correctly.
 def generatedAssetsDir = layout.buildDirectory.dir('generated/littleCraftAssets')
 def generateLittleCraftAssets = tasks.register('generateLittleCraftAssets') {
     outputs.dir(generatedAssetsDir)
@@ -170,9 +170,17 @@ def generateLittleCraftAssets = tasks.register('generateLittleCraftAssets') {
     }
 }
 
-// Register the task-backed output as a resource source; Gradle adds the task
-// dependency to both the regular jar and sources jar automatically.
 sourceSets.main.resources.srcDir(generateLittleCraftAssets)
+
+// Some initial placeholder item definitions are also present as static
+// resources. Exclude duplicate paths deliberately; source definitions remain
+// authoritative and the generated textures/models still get packaged.
+tasks.withType(ProcessResources).configureEach {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+tasks.named('sourcesJar').configure {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
