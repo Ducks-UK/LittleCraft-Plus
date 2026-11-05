@@ -34,14 +34,16 @@ public class ToyItem extends Item {
                     null,
                     player.blockPosition(),
                     SoundEvents.WOOL_HIT,
-                    SoundSource.PLAYERS,
+                    net.minecraft.sounds.SoundSource.PLAYERS,
                     0.8F,
                     rubberDuck ? 1.5F : 1.0F
             );
+
             if (cooldownTicks > 0) {
                 player.getCooldowns().addCooldown(context.getItemInHand(), cooldownTicks);
             }
         }
+
         return InteractionResult.SUCCESS;
     }
 

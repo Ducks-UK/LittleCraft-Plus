@@ -11,10 +11,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.level.Level;
 
-/**
- * Consumable roleplay item. LittleCraft 3.2.5 reads the completed-use
- * EAT/DRINK animation and item identifier to apply its food_effects datapack data.
- */
 public class ConsumableRoleplayItem extends Item {
     private final ItemUseAnimation animation;
     private final int durationTicks;
@@ -52,7 +48,7 @@ public class ConsumableRoleplayItem extends Item {
                     entity.blockPosition(),
                     (animation == ItemUseAnimation.DRINK
                             ? SoundEvents.GENERIC_DRINK
-                            : SoundEvents.GENERIC_EAT).value(),
+                            : SoundEvents.GENERIC_EAT),
                     SoundSource.PLAYERS,
                     0.75F,
                     1.0F
@@ -62,6 +58,7 @@ public class ConsumableRoleplayItem extends Item {
                 stack.shrink(1);
             }
         }
+
         return stack;
     }
 }
