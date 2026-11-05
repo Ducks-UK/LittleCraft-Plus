@@ -3,11 +3,11 @@ package com.littlecraftplus.block;
 import com.littlecraftplus.registry.ModBlocks;
 import com.littlecraftplus.registry.ModItems;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
@@ -21,14 +21,16 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 
 public class DiaperBagBlock extends BaseEntityBlock {
-    public DiaperBagBlock(BlockBehaviour.Properties properties) { super(properties); }
+    public DiaperBagBlock(BlockBehaviour.Properties properties) {
+        super(properties);
+    }
 
     @Override
-    protected RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
+    protected RenderShape getRenderShape(BlockState state) {
+        return RenderShape.MODEL;
+    }
 
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
@@ -42,10 +44,10 @@ public class DiaperBagBlock extends BaseEntityBlock {
         if (!(level.getBlockEntity(pos) instanceof DiaperBagBlockEntity bag)) return InteractionResult.PASS;
 
         if (player.isShiftKeyDown() && level instanceof ServerLevel serverLevel
-                && player instanceof ServerPlayer serverPlayer) {
+                && player instanceof ServerPlayer) {
             ItemStack packedBag = bagStack(bag.getDiapers());
             level.removeBlock(pos, false);
-            Block.popResource(level, pos, packedBag);
+            serverLevel.addFreshEntity(new ItemEntity(serverLevel, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, packedBag));
             return InteractionResult.CONSUME;
         }
 
@@ -54,7 +56,9 @@ public class DiaperBagBlock extends BaseEntityBlock {
             return InteractionResult.CONSUME;
         }
         ItemStack diaper = new ItemStack(ModItems.DIAPER.get());
-        if (!player.getInventory().add(diaper)) Block.popResource(level, pos, diaper);
+        if (!player.getInventory().add(diaper)) {
+            level.addFreshEntity(new ItemEntity(level, player.getX(), player.getY(), player.getZ(), diaper));
+        }
         player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
                 "Diapers in bag: " + bag.getDiapers() + "/" + DiaperBagBlockEntity.CAPACITY));
         return InteractionResult.CONSUME;
@@ -64,7 +68,8 @@ public class DiaperBagBlock extends BaseEntityBlock {
     public void playerDestroy(ServerLevel level, ServerPlayer player, BlockPos pos, BlockState state,
                               BlockEntity blockEntity, ItemStack tool) {
         if (blockEntity instanceof DiaperBagBlockEntity bag) {
-            Block.popResource(level, pos, bagStack(bag.getDiapers()));
+            level.addFreshEntity(new ItemEntity(level, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D,
+                    bagStack(bag.getDiapers())));
         }
         super.playerDestroy(level, player, pos, state, blockEntity, tool);
     }

@@ -21,23 +21,19 @@ public class HighChairBlock extends Block {
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                Player player, BlockHitResult hit) {
-        if (level.isClientSide()) {
-            return InteractionResult.SUCCESS;
-        }
+        if (level.isClientSide()) return InteractionResult.SUCCESS;
         if (!(level instanceof ServerLevel serverLevel) || player.getVehicle() != null) {
             return InteractionResult.CONSUME;
         }
 
-        // Remove an unused seat left by a previous rider at this chair.
         AABB chairArea = new AABB(pos).inflate(0.75);
-        serverLevel.getEntitiesOfClass(ArmorStand.class, chairArea, stand -> stand.isInvisible())
-                .stream().filter(stand -> stand.getPassengers().isEmpty()).forEach(ArmorStand::discard);
+        serverLevel.getEntitiesOfClass(ArmorStand.class, chairArea, stand -> stand.isInvisible() && stand.isPassenger() == false)
+                .stream().findFirst().ifPresent(stand -> stand.discard());
 
-        ArmorStand seat = new ArmorStand(level, pos.getX() + 0.5, pos.getY() + 0.35, pos.getZ() + 0.5);
+        ArmorStand seat = new ArmorStand(level, pos.getX() + 0.5D, pos.getY() + 0.35D, pos.getZ() + 0.5D);
         seat.setInvisible(true);
         seat.setNoGravity(true);
-        seat.setInvulnerable(true);
-        seat.setMarker(true);
+        seat.setSmall(true);
         if (serverLevel.addFreshEntity(seat) && player.startRiding(seat)) {
             return InteractionResult.CONSUME;
         }

@@ -47,18 +47,16 @@ public class ConsumableRoleplayItem extends Item {
                     null,
                     entity.blockPosition(),
                     (animation == ItemUseAnimation.DRINK
-                            ? SoundEvents.GENERIC_DRINK
-                            : SoundEvents.GENERIC_EAT),
+                            ? SoundEvents.GENERIC_DRINK.value()
+                            : SoundEvents.GENERIC_EAT.value()),
                     SoundSource.PLAYERS,
                     0.75F,
                     1.0F
             );
-
             if (singleUse && entity instanceof Player player && !player.getAbilities().instabuild) {
                 stack.shrink(1);
             }
         }
-
         return stack;
     }
 }

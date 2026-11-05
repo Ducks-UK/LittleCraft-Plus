@@ -2,6 +2,7 @@ package com.littlecraftplus.registry;
 
 import com.littlecraftplus.LittleCraftPlus;
 import com.littlecraftplus.block.DiaperBagBlock;
+import com.littlecraftplus.block.DiaperBagBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;

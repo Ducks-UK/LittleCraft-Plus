@@ -9,13 +9,15 @@ import com.littlecraftplus.items.ToyItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
-/** Registrations for LittleCraft Plus food, toys, and roleplay equipment. */
+/** Registrations for LittleCraft Plus food, toys, blocks, and roleplay equipment. */
 public final class ModItems {
     public static final DeferredRegister.Items ITEMS =
             DeferredRegister.createItems(LittleCraftPlus.MOD_ID);
@@ -23,8 +25,9 @@ public final class ModItems {
     /** All registered items in registration order. */
     public static final Map<String, DeferredItem<Item>> ALL = new LinkedHashMap<>();
 
-    /** Direct handle used as the creative tab icon. */
     public static final DeferredItem<Item> RUBBER_DUCK;
+    public static final DeferredItem<Item> DIAPER;
+    public static final DeferredItem<Item> DIAPER_BAG;
 
     private ModItems() {}
 
@@ -48,7 +51,7 @@ public final class ModItems {
                 new ToyItem(properties, cooldownTicks, duck)));
     }
 
-    private static DeferredItem<Item> blockItem(String id, java.util.function.Supplier<? extends net.minecraft.world.level.block.Block> block) {
+    private static DeferredItem<Item> blockItem(String id, Supplier<? extends Block> block) {
         return put(id, ITEMS.registerItem(id, properties -> new BlockItem(block.get(), properties)));
     }
 
@@ -90,13 +93,13 @@ public final class ModItems {
         toy("teething_ring", 10, false);
         toy("baby_rattle", 8, false);
 
-        plain("diaper");
+        DIAPER = plain("diaper");
         plain("baby_blanket");
         plain("storybook");
         plain("pacifier_clip");
         plain("baby_wipes");
         plain("sippy_cup");
         blockItem("high_chair", ModBlocks.HIGH_CHAIR);
-        blockItem("diaper_bag", ModBlocks.DIAPER_BAG);
+        DIAPER_BAG = blockItem("diaper_bag", ModBlocks.DIAPER_BAG);
     }
 }
