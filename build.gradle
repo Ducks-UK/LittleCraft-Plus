@@ -67,9 +67,9 @@ def generateModMetadata = tasks.register('generateModMetadata', ProcessResources
 sourceSets.main.resources.srcDir(generateModMetadata)
 neoForge.ideSyncTask generateModMetadata
 
-// Generate original item textures, decorative block models, and recipes into
-// build/ instead of the source tree. Register task-backed output as a resource
-// source so Gradle orders resource and source-jar tasks correctly.
+// Generate original item textures and decorative block models into build/.
+// Generated data-pack recipes are intentionally omitted until their schema is
+// validated against the targeted Minecraft 26.3 datapack format.
 def generatedAssetsDir = layout.buildDirectory.dir('generated/littleCraftAssets')
 def generateLittleCraftAssets = tasks.register('generateLittleCraftAssets') {
     outputs.dir(generatedAssetsDir)
@@ -133,19 +133,6 @@ def generateLittleCraftAssets = tasks.register('generateLittleCraftAssets') {
             new File(itemDefinitions, "${id}.json").text = JsonOutput.prettyPrint(JsonOutput.toJson([
                     model: [type: 'minecraft:model', model: "littlecraftplus:item/${id}"]
             ]))
-
-            def recipe = [
-                    type: 'minecraft:crafting_shapeless',
-                    ingredients: [
-                            [item: 'minecraft:paper'],
-                            [item: 'minecraft:string'],
-                            [item: 'minecraft:white_wool']
-                    ],
-                    result: [id: "littlecraftplus:${id}", count: 1]
-            ]
-            def recipeFile = new File(outputRoot, "data/littlecraftplus/recipe/${id}.json")
-            recipeFile.parentFile.mkdirs()
-            recipeFile.text = JsonOutput.prettyPrint(JsonOutput.toJson(recipe))
         }
 
         ['high_chair', 'diaper_bag'].each { id ->
@@ -172,9 +159,6 @@ def generateLittleCraftAssets = tasks.register('generateLittleCraftAssets') {
 
 sourceSets.main.resources.srcDir(generateLittleCraftAssets)
 
-// Some initial placeholder item definitions are also present as static
-// resources. Exclude duplicate paths deliberately; source definitions remain
-// authoritative and the generated textures/models still get packaged.
 tasks.withType(ProcessResources).configureEach {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
