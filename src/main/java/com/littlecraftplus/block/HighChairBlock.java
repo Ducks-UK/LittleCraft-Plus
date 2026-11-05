@@ -12,8 +12,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 
-/** A placeable high chair with a temporary invisible mount seat. */
+/** A placeable high chair with an invisible mount positioned at seat height. */
 public class HighChairBlock extends Block {
+    private static final double MOUNT_Y_OFFSET = -1.2D;
+
     public HighChairBlock(BlockBehaviour.Properties properties) {
         super(properties);
     }
@@ -31,7 +33,10 @@ public class HighChairBlock extends Block {
                         stand -> stand.isInvisible() && !stand.isPassenger())
                 .stream().findFirst().ifPresent(ArmorStand::discard);
 
-        ArmorStand seat = new ArmorStand(level, pos.getX() + 0.5D, pos.getY() + 0.35D, pos.getZ() + 0.5D);
+        // ArmorStand passenger placement adds the stand's riding height. Place
+        // its origin below the block so the player's feet land on the chair seat.
+        ArmorStand seat = new ArmorStand(level, pos.getX() + 0.5D,
+                pos.getY() + MOUNT_Y_OFFSET, pos.getZ() + 0.5D);
         seat.setInvisible(true);
         seat.setNoGravity(true);
         if (serverLevel.addFreshEntity(seat) && player.startRiding(seat)) {

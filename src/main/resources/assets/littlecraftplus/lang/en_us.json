@@ -1,13 +1,14 @@
 {
-  "item.littlecraftplus.coffee": "Coffee",
+  "itemGroup.littlecraftplus": "LittleCraft Plus",
+  "item.littlecraftplus.coffee": "Coffee Cup",
   "item.littlecraftplus.iced_coffee": "Iced Coffee",
-  "item.littlecraftplus.hot_chocolate": "Hot Chocolate",
+  "item.littlecraftplus.hot_chocolate": "Hot Chocolate Mug",
   "item.littlecraftplus.vanilla_latte": "Vanilla Latte",
   "item.littlecraftplus.strawberry_milk": "Strawberry Milk",
   "item.littlecraftplus.babyccino": "Babyccino",
   "item.littlecraftplus.chocolate_milk": "Chocolate Milk",
-  "item.littlecraftplus.apple_juice": "Apple Juice",
-  "item.littlecraftplus.orange_juice": "Orange Juice",
+  "item.littlecraftplus.apple_juice": "Apple Juice Box",
+  "item.littlecraftplus.orange_juice": "Orange Juice Box",
   "item.littlecraftplus.warm_milk": "Warm Milk",
   "item.littlecraftplus.baby_food_jar": "Baby Food Jar",
   "item.littlecraftplus.applesauce": "Applesauce",
@@ -33,10 +34,12 @@
   "item.littlecraftplus.toy_mobile": "Toy Mobile",
   "item.littlecraftplus.teething_ring": "Teething Ring",
   "item.littlecraftplus.baby_rattle": "Baby Rattle",
+  "item.littlecraftplus.diaper": "Diaper",
   "item.littlecraftplus.baby_blanket": "Baby Blanket",
   "item.littlecraftplus.storybook": "Storybook",
   "item.littlecraftplus.pacifier_clip": "Pacifier Clip",
   "item.littlecraftplus.baby_wipes": "Baby Wipes",
-  "item.littlecraftplus.diaper_bag": "Diaper Bag",
-  "item.littlecraftplus.sippy_cup": "Sippy Cup"
+  "item.littlecraftplus.sippy_cup": "Sippy Cup",
+  "block.littlecraftplus.high_chair": "High Chair",
+  "block.littlecraftplus.diaper_bag": "Diaper Bag"
 }

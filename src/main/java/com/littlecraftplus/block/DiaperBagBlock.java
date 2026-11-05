@@ -3,6 +3,8 @@ package com.littlecraftplus.block;
 import com.littlecraftplus.registry.ModBlocks;
 import com.littlecraftplus.registry.ModItems;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
@@ -10,7 +12,9 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
@@ -23,6 +27,8 @@ import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.BlockHitResult;
 
 public class DiaperBagBlock extends BaseEntityBlock {
+    private static final ResourceLocation LITTLECRAFT_DIAPER_ID = ResourceLocation.parse("littlecraft:diaper");
+
     public DiaperBagBlock(BlockBehaviour.Properties properties) {
         super(properties);
     }
@@ -47,15 +53,23 @@ public class DiaperBagBlock extends BaseEntityBlock {
                 && player instanceof ServerPlayer) {
             ItemStack packedBag = bagStack(bag.getDiapers());
             level.removeBlock(pos, false);
-            serverLevel.addFreshEntity(new ItemEntity(serverLevel, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, packedBag));
+            serverLevel.addFreshEntity(new ItemEntity(serverLevel, pos.getX() + 0.5D,
+                    pos.getY() + 0.5D, pos.getZ() + 0.5D, packedBag));
             return InteractionResult.CONSUME;
         }
 
+        Item diaperItem = BuiltInRegistries.ITEM.get(LITTLECRAFT_DIAPER_ID);
+        if (diaperItem == Items.AIR) {
+            player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                    "LittleCraft diaper item is unavailable. Check that LittleCraft is installed."));
+            return InteractionResult.CONSUME;
+        }
         if (!bag.takeOne()) {
             player.sendSystemMessage(net.minecraft.network.chat.Component.literal("The diaper bag is empty."));
             return InteractionResult.CONSUME;
         }
-        ItemStack diaper = new ItemStack(ModItems.DIAPER.get());
+
+        ItemStack diaper = new ItemStack(diaperItem);
         if (!player.getInventory().add(diaper)) {
             level.addFreshEntity(new ItemEntity(level, player.getX(), player.getY(), player.getZ(), diaper));
         }
@@ -68,8 +82,8 @@ public class DiaperBagBlock extends BaseEntityBlock {
     public void playerDestroy(ServerLevel level, ServerPlayer player, BlockPos pos, BlockState state,
                               BlockEntity blockEntity, ItemStack tool) {
         if (blockEntity instanceof DiaperBagBlockEntity bag) {
-            level.addFreshEntity(new ItemEntity(level, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D,
-                    bagStack(bag.getDiapers())));
+            level.addFreshEntity(new ItemEntity(level, pos.getX() + 0.5D, pos.getY() + 0.5D,
+                    pos.getZ() + 0.5D, bagStack(bag.getDiapers())));
         }
         super.playerDestroy(level, player, pos, state, blockEntity, tool);
     }
