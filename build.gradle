@@ -91,48 +91,22 @@ def generateLittleCraftAssets = tasks.register('generateLittleCraftAssets') {
         ]
 
         def itemTextureNames = [
-                coffee: 'coffee_icon',
-                iced_coffee: 'iced_coffee_icon',
-                hot_chocolate: 'hot_chocolate_icon',
-                vanilla_latte: 'vanilla_latte_icon',
-                strawberry_milk: 'strawberry_milk_icon',
-                babyccino: 'babyccino_icon',
-                chocolate_milk: 'chocolate_milk_icon',
-                apple_juice: 'apple_juice_icon',
-                orange_juice: 'orange_juice_icon',
-                warm_milk: 'warm_milk_icon',
-                baby_food_jar: 'baby_food_jar_icon',
-                applesauce: 'applesauce_icon',
-                baby_biscuits: 'baby_biscuits_icon',
-                cookies: 'cookies_icon',
-                cupcake: 'cupcake_icon',
-                pancakes: 'pancakes_icon',
-                cereal_bowl: 'cereal_bowl_icon',
-                rubber_duck: 'rubber_duck_icon',
-                teddy_bear: 'teddy_bear_icon',
-                bunny_plushie: 'bunny_plushie_icon',
-                cat_plushie: 'cat_plushie_icon',
-                elephant_plushie: 'elephant_plushie_icon',
-                dinosaur_plushie: 'dinosaur_plushie_icon',
-                frog_plushie: 'frog_plushie_icon',
-                puppy_plushie: 'puppy_plushie_icon',
-                rattle: 'rattle_icon',
-                building_blocks: 'building_blocks_icon',
-                toy_train: 'toy_train_icon',
-                toy_ball: 'toy_ball_icon',
-                musical_toy: 'musical_toy_icon',
-                stuffed_star: 'stuffed_star_icon',
-                toy_mobile: 'toy_mobile_icon',
-                teething_ring: 'teething_ring_icon',
-                baby_rattle: 'baby_rattle_icon',
-                diaper: 'diaper_icon',
-                baby_blanket: 'baby_blanket_icon',
-                storybook: 'storybook_icon',
-                pacifier_clip: 'pacifier_clip_icon',
-                baby_wipes: 'baby_wipes_icon',
-                sippy_cup: 'sippy_cup_icon',
-                high_chair: 'high_chair_block_icon',
-                diaper_bag: 'diaper_bag_block_icon'
+                coffee: 'coffee_icon', iced_coffee: 'iced_coffee_icon', hot_chocolate: 'hot_chocolate_icon',
+                vanilla_latte: 'vanilla_latte_icon', strawberry_milk: 'strawberry_milk_icon',
+                babyccino: 'babyccino_icon', chocolate_milk: 'chocolate_milk_icon',
+                apple_juice: 'apple_juice_icon', orange_juice: 'orange_juice_icon', warm_milk: 'warm_milk_icon',
+                baby_food_jar: 'baby_food_jar_icon', applesauce: 'applesauce_icon',
+                baby_biscuits: 'baby_biscuits_icon', cookies: 'cookies_icon', cupcake: 'cupcake_icon',
+                pancakes: 'pancakes_icon', cereal_bowl: 'cereal_bowl_icon', rubber_duck: 'rubber_duck_icon',
+                teddy_bear: 'teddy_bear_icon', bunny_plushie: 'bunny_plushie_icon', cat_plushie: 'cat_plushie_icon',
+                elephant_plushie: 'elephant_plushie_icon', dinosaur_plushie: 'dinosaur_plushie_icon',
+                frog_plushie: 'frog_plushie_icon', puppy_plushie: 'puppy_plushie_icon', rattle: 'rattle_icon',
+                building_blocks: 'building_blocks_icon', toy_train: 'toy_train_icon', toy_ball: 'toy_ball_icon',
+                musical_toy: 'musical_toy_icon', stuffed_star: 'stuffed_star_icon', toy_mobile: 'toy_mobile_icon',
+                teething_ring: 'teething_ring_icon', baby_rattle: 'baby_rattle_icon', diaper: 'diaper_icon',
+                baby_blanket: 'baby_blanket_icon', storybook: 'storybook_icon', pacifier_clip: 'pacifier_clip_icon',
+                baby_wipes: 'baby_wipes_icon', sippy_cup: 'sippy_cup_icon',
+                high_chair: 'high_chair_block_icon', diaper_bag: 'diaper_bag_block_icon'
         ]
 
         def assetDir = new File(outputRoot, 'assets/littlecraftplus')
@@ -178,7 +152,7 @@ def generateLittleCraftAssets = tasks.register('generateLittleCraftAssets') {
                 box(6, 5, 20, 2, 0xffe7e7e7); box(5, 24, 22, 3, 0xffe1e1e1)
                 box(3, 10, 3, 12, 0xffc7c7c7); box(26, 10, 3, 12, 0xffc7c7c7)
                 box(8, 12, 16, 8, 0xffdcecff); box(9, 13, 14, 6, white)
-                g.setColor(new Color(0xff385d78, true)); g.setFont(new Font('SansSerif', Font.BOLD, 5)); g.drawString('DIAPER', 9, 18)
+                g.setColor(new Color(0xff385d78.intValue(), true)); g.setFont(new Font('SansSerif', Font.BOLD, 5)); g.drawString('DIAPER', 9, 18)
                 box(14, 21, 4, 2, 0xffb7b7b7); box(15, 7, 2, 3, 0xffaaaaaa)
             } else if (key == 'high_chair') {
                 box(8, 4, 4, 13, dark); box(20, 4, 4, 13, dark)
