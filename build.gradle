@@ -32,13 +32,11 @@ neoForge {
             client()
             systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
         }
-
         server {
             server()
             programArgument '--nogui'
             systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
         }
-
         gameTestServer {
             type = 'gameTestServer'
             systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
@@ -52,9 +50,6 @@ neoForge {
     }
 }
 
-// LittleCraft integration uses its documented food_effects datapack format.
-// No LittleCraft implementation classes are needed at compile time.
-
 def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
     def replaceProperties = [
             minecraft_version      : minecraft_version,
@@ -67,7 +62,6 @@ def generateModMetadata = tasks.register('generateModMetadata', ProcessResources
             mod_authors            : mod_authors,
             mod_description        : mod_description
     ]
-
     inputs.properties replaceProperties
     expand replaceProperties
     from 'src/main/templates'
@@ -77,8 +71,7 @@ def generateModMetadata = tasks.register('generateModMetadata', ProcessResources
 sourceSets.main.resources.srcDir(generateModMetadata)
 neoForge.ideSyncTask generateModMetadata
 
-// Generate original pixel-art textures, 3D block models, and one recipe for
-// every registered item/block. Generated resources are included in the jar.
+// Generate original pixel-art icons, decorative block models, and recipes.
 def generateLittleCraftAssets = tasks.register('generateLittleCraftAssets') {
     def outputRoot = layout.projectDirectory.dir('src/generated/resources').asFile
     outputs.dir(outputRoot)
@@ -95,26 +88,25 @@ def generateLittleCraftAssets = tasks.register('generateLittleCraftAssets') {
                 'pacifier_clip', 'baby_wipes', 'sippy_cup', 'high_chair', 'diaper_bag'
         ]
         def assetDir = new File(outputRoot, 'assets/littlecraftplus')
-        def textureDir = new File(assetDir, 'textures/item')
+        def itemTextureDir = new File(assetDir, 'textures/item')
         def blockTextureDir = new File(assetDir, 'textures/block')
-        def itemDefinitionDir = new File(assetDir, 'items')
-        def itemModelDir = new File(assetDir, 'models/item')
-        def blockModelDir = new File(assetDir, 'models/block')
-        def blockStateDir = new File(assetDir, 'blockstates')
-        [textureDir, blockTextureDir, itemDefinitionDir, itemModelDir, blockModelDir, blockStateDir].each { it.mkdirs() }
+        def itemDefinitions = new File(assetDir, 'items')
+        def itemModels = new File(assetDir, 'models/item')
+        def blockModels = new File(assetDir, 'models/block')
+        def blockStates = new File(assetDir, 'blockstates')
+        [itemTextureDir, blockTextureDir, itemDefinitions, itemModels, blockModels, blockStates].each { it.mkdirs() }
 
-        // Small, intentionally pixelated, distinct palettes/patterns per item.
         def writeTexture = { File file, String key ->
             int hash = key.hashCode()
-            float hue = (Math.abs(hash % 360)) / 360.0f
+            float hue = Math.abs(hash % 360) / 360.0f
+            float accentHue = (float) ((hue + 0.42f) % 1.0f)
             Color main = Color.getHSBColor(hue, 0.68f, 0.92f)
             Color shade = Color.getHSBColor(hue, 0.78f, 0.52f)
-            Color accent = Color.getHSBColor((hue + 0.42f) % 1.0f, 0.55f, 1.0f)
+            Color accent = Color.getHSBColor(accentHue, 0.55f, 1.0f)
             def image = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB)
             for (int y = 0; y < 16; y++) {
                 for (int x = 0; x < 16; x++) {
-                    boolean silhouette = x >= 3 && x <= 12 && y >= 2 && y <= 13
-                    if (!silhouette) continue
+                    if (x < 3 || x > 12 || y < 2 || y > 13) continue
                     Color pixel = ((x + y + Math.abs(hash)) % 5 == 0) ? shade : main
                     if ((x * 3 + y + Math.abs(hash >> 4)) % 13 == 0) pixel = accent
                     if (y == 13 || x == 3 || x == 12) pixel = shade
@@ -124,13 +116,22 @@ def generateLittleCraftAssets = tasks.register('generateLittleCraftAssets') {
             ImageIO.write(image, 'png', file)
         }
 
+        def cube = { List from, List to ->
+            [from: from, to: to, faces: [
+                    north: [texture: '#all'], south: [texture: '#all'],
+                    east: [texture: '#all'], west: [texture: '#all'],
+                    up: [texture: '#all'], down: [texture: '#all']
+            ]]
+        }
+
         itemIds.each { id ->
-            writeTexture(new File(textureDir, "${id}.png"), id)
-            def itemModel = id in ['high_chair', 'diaper_bag']
+            writeTexture(new File(itemTextureDir, "${id}.png"), id)
+            boolean blockItem = id in ['high_chair', 'diaper_bag']
+            def model = blockItem
                     ? [parent: "littlecraftplus:block/${id}"]
                     : [parent: 'minecraft:item/generated', textures: [layer0: "littlecraftplus:item/${id}"]]
-            new File(itemModelDir, "${id}.json").text = JsonOutput.prettyPrint(JsonOutput.toJson(itemModel))
-            new File(itemDefinitionDir, "${id}.json").text = JsonOutput.prettyPrint(JsonOutput.toJson([
+            new File(itemModels, "${id}.json").text = JsonOutput.prettyPrint(JsonOutput.toJson(model))
+            new File(itemDefinitions, "${id}.json").text = JsonOutput.prettyPrint(JsonOutput.toJson([
                     model: [type: 'minecraft:model', model: "littlecraftplus:item/${id}"]
             ]))
 
@@ -139,7 +140,7 @@ def generateLittleCraftAssets = tasks.register('generateLittleCraftAssets') {
                     ingredients: [
                             [item: 'minecraft:paper'],
                             [item: 'minecraft:string'],
-                            [item: 'minecraft:wool']
+                            [item: 'minecraft:white_wool']
                     ],
                     result: [id: "littlecraftplus:${id}", count: 1]
             ]
@@ -150,25 +151,20 @@ def generateLittleCraftAssets = tasks.register('generateLittleCraftAssets') {
 
         ['high_chair', 'diaper_bag'].each { id ->
             writeTexture(new File(blockTextureDir, "${id}.png"), "block_${id}")
-            def common = [
+            def elements = id == 'high_chair'
+                    ? [cube([2, 0, 2], [4, 10, 4]), cube([12, 0, 2], [14, 10, 4]),
+                       cube([2, 0, 12], [4, 10, 14]), cube([12, 0, 12], [14, 10, 14]),
+                       cube([2, 9, 2], [14, 11, 14]), cube([2, 10, 12], [14, 16, 14]),
+                       cube([3, 10, 4], [13, 12, 7])]
+                    : [cube([2, 2, 3], [14, 13, 13]), cube([3, 10, 2], [13, 14, 3]),
+                       cube([5, 0, 4], [11, 2, 12])]
+            def blockModel = [
                     parent: 'minecraft:block/block',
                     textures: [particle: "littlecraftplus:block/${id}", all: "littlecraftplus:block/${id}"],
-                    elements: id == 'high_chair' ? [
-                            [from: [2, 0, 2], to: [4, 10, 4], faces: [north: [texture: '#all'], south: [texture: '#all'], east: [texture: '#all'], west: [texture: '#all'], up: [texture: '#all'], down: [texture: '#all']]],
-                            [from: [12, 0, 2], to: [14, 10, 4], faces: [north: [texture: '#all'], south: [texture: '#all'], east: [texture: '#all'], west: [texture: '#all'], up: [texture: '#all'], down: [texture: '#all']]],
-                            [from: [2, 0, 12], to: [4, 10, 14], faces: [north: [texture: '#all'], south: [texture: '#all'], east: [texture: '#all'], west: [texture: '#all'], up: [texture: '#all'], down: [texture: '#all']]],
-                            [from: [12, 0, 12], to: [14, 10, 14], faces: [north: [texture: '#all'], south: [texture: '#all'], east: [texture: '#all'], west: [texture: '#all'], up: [texture: '#all'], down: [texture: '#all']]],
-                            [from: [2, 9, 2], to: [14, 11, 14], faces: [north: [texture: '#all'], south: [texture: '#all'], east: [texture: '#all'], west: [texture: '#all'], up: [texture: '#all'], down: [texture: '#all']]],
-                            [from: [2, 10, 12], to: [14, 16, 14], faces: [north: [texture: '#all'], south: [texture: '#all'], east: [texture: '#all'], west: [texture: '#all'], up: [texture: '#all'], down: [texture: '#all']]],
-                            [from: [3, 10, 4], to: [13, 12, 7], faces: [north: [texture: '#all'], south: [texture: '#all'], east: [texture: '#all'], west: [texture: '#all'], up: [texture: '#all'], down: [texture: '#all']]]
-                    ] : [
-                            [from: [2, 2, 3], to: [14, 13, 13], faces: [north: [texture: '#all'], south: [texture: '#all'], east: [texture: '#all'], west: [texture: '#all'], up: [texture: '#all'], down: [texture: '#all']]],
-                            [from: [3, 10, 2], to: [13, 14, 3], faces: [north: [texture: '#all'], south: [texture: '#all'], east: [texture: '#all'], west: [texture: '#all'], up: [texture: '#all'], down: [texture: '#all']]],
-                            [from: [5, 0, 4], to: [11, 2, 12], faces: [north: [texture: '#all'], south: [texture: '#all'], east: [texture: '#all'], west: [texture: '#all'], up: [texture: '#all'], down: [texture: '#all']]]
-                    ]
+                    elements: elements
             ]
-            new File(blockModelDir, "${id}.json").text = JsonOutput.prettyPrint(JsonOutput.toJson(common))
-            new File(blockStateDir, "${id}.json").text = JsonOutput.prettyPrint(JsonOutput.toJson([
+            new File(blockModels, "${id}.json").text = JsonOutput.prettyPrint(JsonOutput.toJson(blockModel))
+            new File(blockStates, "${id}.json").text = JsonOutput.prettyPrint(JsonOutput.toJson([
                     variants: ['': [model: "littlecraftplus:block/${id}"]]
             ]))
         }
@@ -176,6 +172,12 @@ def generateLittleCraftAssets = tasks.register('generateLittleCraftAssets') {
 }
 
 tasks.named('processResources').configure {
+    dependsOn(generateLittleCraftAssets)
+}
+
+// Generated files live in the main resource source set, so sourceJar must wait
+// for their generation too (otherwise Gradle's task validation fails).
+tasks.named('sourcesJar').configure {
     dependsOn(generateLittleCraftAssets)
 }
 
