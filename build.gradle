@@ -24,7 +24,6 @@ java {
 
 neoForge {
     version = project.neo_version
-
     runs {
         client {
             client()
@@ -40,12 +39,16 @@ neoForge {
             systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
         }
     }
-
     mods {
         "${mod_id}" {
             sourceSet(sourceSets.main)
         }
     }
+}
+
+// Keep the mod's declared/API version unchanged; only name the distributable jar 1.2.4.
+tasks.named('jar') {
+    archiveFileName = "${mod_id}-1.2.4.jar"
 }
 
 def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
@@ -54,29 +57,27 @@ def generateModMetadata = tasks.register('generateModMetadata', ProcessResources
             minecraft_version_range: minecraft_version_range,
             neo_version            : neo_version,
             mod_id                 : mod_id,
-            mod_name               : mod_name,
-            mod_license            : mod_license,
-            mod_version            : mod_version,
+            mod_name                : mod_name,
+            mod_license             : mod_license,
+            mod_version             : mod_version,
             mod_authors             : mod_authors,
-            mod_description        : mod_description
+            mod_description         : mod_description
     ]
     inputs.properties replaceProperties
     expand replaceProperties
     from 'src/main/templates'
     into layout.buildDirectory.dir('generated/sources/modMetadata')
 }
-
 sourceSets.main.resources.srcDir(generateModMetadata)
 neoForge.ideSyncTask generateModMetadata
 
-// Generate original item textures and decorative block models into build/.
-// Generated data-pack recipes remain omitted until their target schema is verified.
+// Generate item icons and block models as build outputs. Data-pack recipes are
+// intentionally not generated until their target schema is validated.
 def generatedAssetsDir = layout.buildDirectory.dir('generated/littleCraftAssets')
 def generateLittleCraftAssets = tasks.register('generateLittleCraftAssets') {
     outputs.dir(generatedAssetsDir)
-
     doLast {
-        def outputRoot = generatedAssetsDir.get().asFile
+        File outputRoot = generatedAssetsDir.get().asFile
         def itemIds = [
                 'coffee', 'iced_coffee', 'hot_chocolate', 'vanilla_latte', 'strawberry_milk',
                 'babyccino', 'chocolate_milk', 'apple_juice', 'orange_juice', 'warm_milk',
@@ -97,109 +98,97 @@ def generateLittleCraftAssets = tasks.register('generateLittleCraftAssets') {
         [itemTextureDir, blockTextureDir, itemDefinitions, itemModels, blockModels, blockStates].each { it.mkdirs() }
 
         def writeTexture = { File file, String key ->
-            int hash = key.hashCode()
             def image = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB)
             def g = image.createGraphics()
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF)
-            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR)
-            def box = { int x, int y, int w, int h, int rgb ->
-                g.setColor(new Color(rgb, true)); g.fillRect(x, y, w, h)
+            // Number is intentional: Groovy treats many 0xAARRGGBB literals as Long.
+            def box = { int x, int y, int w, int h, Number rgb ->
+                g.setColor(new Color(rgb.intValue(), true))
+                g.fillRect(x, y, w, h)
             }
-            def oval = { int x, int y, int w, int h, int rgb ->
-                g.setColor(new Color(rgb, true)); g.fillOval(x, y, w, h)
+            def oval = { int x, int y, int w, int h, Number rgb ->
+                g.setColor(new Color(rgb.intValue(), true))
+                g.fillOval(x, y, w, h)
             }
-            int outline = 0xff382a25
-            int accent = 0xff000000 | (0x505050 + Math.abs(hash % 0x9f9f9f))
+            int dark = 0xff382a25
+            int white = 0xfffafafa
 
-            if (key in ['coffee', 'iced_coffee', 'hot_chocolate', 'vanilla_latte', 'strawberry_milk',
-                        'babyccino', 'chocolate_milk', 'apple_juice', 'orange_juice', 'warm_milk', 'sippy_cup']) {
-                // A recognizable takeaway cup: rim, drink, shaded cup walls, handle and straw.
-                box(9, 7, 15, 3, outline); box(10, 9, 13, 19, 0xfff0e2c6)
-                box(11, 12, 11, 13, key == 'strawberry_milk' ? 0xffe98cae :
+            if (key in ['coffee', 'iced_coffee', 'hot_chocolate', 'vanilla_latte', 'strawberry_milk', 'babyccino', 'chocolate_milk', 'apple_juice', 'orange_juice', 'warm_milk', 'sippy_cup']) {
+                int drink = key == 'strawberry_milk' ? 0xffe98cae :
                         (key == 'apple_juice' ? 0xffd98925 : (key == 'orange_juice' ? 0xffff9a25 :
-                        (key == 'hot_chocolate' || key == 'chocolate_milk' || key == 'coffee' || key == 'iced_coffee'
-                                ? 0xff59351f : (key == 'vanilla_latte' || key == 'warm_milk' || key == 'babyccino'
-                                ? 0xffd6b98b : 0xffd87830)))))
-                box(12, 11, 9, 2, 0xfff7dfb3); box(12, 14, 2, 9, 0x55ffffff)
-                box(9, 26, 15, 3, outline); box(24, 13, 4, 9, outline); box(26, 15, 2, 5, 0xfff0e2c6)
-                if (key in ['iced_coffee', 'apple_juice', 'orange_juice']) {
+                        (key in ['coffee', 'iced_coffee', 'hot_chocolate', 'chocolate_milk'] ? 0xff59351f :
+                        (key in ['vanilla_latte', 'warm_milk', 'babyccino'] ? 0xffd6b98b : 0xffd87830))) )
+                box(9, 7, 15, 3, dark); box(10, 9, 13, 19, 0xfff0e2c6)
+                box(11, 12, 11, 13, drink); box(12, 11, 9, 2, 0xfff7dfb3)
+                box(9, 26, 15, 3, dark); box(24, 13, 4, 9, dark); box(26, 15, 2, 5, 0xfff0e2c6)
+                if (key == 'iced_coffee') {
                     box(12, 13, 4, 4, 0xfff4ffff); box(18, 15, 4, 4, 0xffd9f4f4)
-                    box(13, 13, 2, 1, 0xffffffff); box(19, 15, 2, 1, 0xffffffff)
+                    box(13, 13, 2, 1, white); box(19, 15, 2, 1, white)
                 }
                 box(19, 1, 3, 8, key == 'iced_coffee' ? 0xff594331 : 0xffef6a62)
-                box(19, 1, 3, 2, 0xfff7e7ce)
                 if (key == 'sippy_cup') { box(8, 6, 17, 3, 0xff71b6d4); box(14, 2, 5, 5, 0xff71b6d4) }
             } else if (key == 'diaper_bag') {
-                box(2, 2, 28, 28, 0xffd9d9d9); box(4, 3, 24, 26, 0xfffafafa)
+                box(2, 2, 28, 28, 0xffc9c9c9); box(4, 3, 24, 26, white)
                 box(6, 5, 20, 2, 0xffe7e7e7); box(5, 24, 22, 3, 0xffe1e1e1)
                 box(3, 10, 3, 12, 0xffc7c7c7); box(26, 10, 3, 12, 0xffc7c7c7)
-                box(8, 12, 16, 8, 0xffdcecff); box(9, 13, 14, 6, 0xffffffff)
+                box(8, 12, 16, 8, 0xffdcecff); box(9, 13, 14, 6, white)
                 g.setColor(new Color(0xff385d78, true)); g.setFont(new Font('SansSerif', Font.BOLD, 5)); g.drawString('DIAPER', 9, 18)
                 box(14, 21, 4, 2, 0xffb7b7b7); box(15, 7, 2, 3, 0xffaaaaaa)
             } else if (key == 'high_chair') {
-                // Small wooden high-chair icon, with separate legs, tray, back and seat.
-                int wood = 0xffb77a43
-                box(8, 4, 4, 13, outline); box(20, 4, 4, 13, outline)
-                box(9, 5, 2, 11, wood); box(21, 5, 2, 11, wood)
-                box(6, 14, 5, 16, outline); box(21, 14, 5, 16, outline)
+                box(8, 4, 4, 13, dark); box(20, 4, 4, 13, dark)
+                box(9, 5, 2, 11, 0xffb77a43); box(21, 5, 2, 11, 0xffb77a43)
+                box(6, 14, 5, 16, dark); box(21, 14, 5, 16, dark)
                 box(7, 15, 3, 14, 0xff9a6337); box(22, 15, 3, 14, 0xff9a6337)
-                box(9, 11, 14, 5, outline); box(10, 12, 12, 3, 0xffd39a5f)
-                box(5, 9, 22, 3, outline); box(6, 10, 20, 1, 0xffe0b778)
-                box(11, 18, 10, 2, 0xffd39a5f); box(12, 6, 1, 6, 0xffe5b97d)
+                box(9, 11, 14, 5, dark); box(10, 12, 12, 3, 0xffd39a5f)
+                box(5, 9, 22, 3, dark); box(6, 10, 20, 1, 0xffe0b778)
+                box(11, 18, 10, 2, 0xffd39a5f)
             } else if (key == 'rubber_duck') {
                 oval(5, 13, 20, 15, 0xffffd927); oval(13, 5, 13, 13, 0xffffe94b)
-                box(22, 11, 8, 4, 0xffff9e20); box(25, 10, 4, 2, 0xffffb536)
-                oval(20, 8, 2, 2, outline); box(10, 25, 15, 3, 0xffe7a71b)
+                box(22, 11, 8, 4, 0xffff9e20); oval(20, 8, 2, 2, dark)
             } else if (key.endsWith('_plushie') || key == 'teddy_bear' || key == 'stuffed_star') {
-                int fur = 0xff000000 | (0x707070 + Math.abs(hash % 0x8f8f8f))
+                int fur = key == 'frog_plushie' ? 0xff65a747 : (key == 'elephant_plushie' ? 0xff939da5 : 0xffa66f4d)
                 oval(5, 4, 9, 9, fur); oval(19, 4, 9, 9, fur); oval(7, 7, 19, 19, fur)
-                oval(10, 12, 13, 10, 0xfff3e5d3); oval(12, 12, 2, 2, outline); oval(19, 12, 2, 2, outline)
+                oval(10, 12, 13, 10, 0xfff3e5d3); oval(12, 12, 2, 2, dark); oval(19, 12, 2, 2, dark)
                 oval(15, 17, 4, 3, 0xff5d3d37); box(11, 24, 4, 4, fur); box(19, 24, 4, 4, fur)
                 if (key == 'bunny_plushie') { oval(8, 0, 5, 11, fur); oval(21, 0, 5, 11, fur) }
                 if (key == 'cat_plushie') { box(7, 5, 5, 6, fur); box(21, 5, 5, 6, fur) }
-                if (key == 'elephant_plushie') { oval(0, 13, 11, 7, fur); oval(22, 13, 10, 7, fur) }
-                if (key == 'frog_plushie') { oval(9, 3, 6, 6, fur); oval(18, 3, 6, 6, fur); box(11, 21, 11, 2, 0xff65a747) }
-                if (key == 'stuffed_star') { oval(12, 1, 9, 30, 0xffffd856); oval(1, 12, 30, 9, 0xffffd856); oval(11, 12, 10, 10, 0xffffd856) }
-            } else if (key == 'diaper' || key == 'baby_blanket' || key == 'baby_wipes') {
-                box(5, 6, 22, 21, 0xffe8e8e8); box(7, 7, 18, 17, key == 'baby_blanket' ? 0xffa9d8ed : 0xffffffff)
+                if (key == 'stuffed_star') { oval(12, 1, 9, 30, 0xffffd856); oval(1, 12, 30, 9, 0xffffd856) }
+            } else if (key in ['diaper', 'baby_blanket', 'baby_wipes']) {
+                box(5, 6, 22, 21, 0xffe8e8e8); box(7, 7, 18, 17, key == 'baby_blanket' ? 0xffa9d8ed : white)
                 box(9, 9, 3, 3, 0xfff7c8d8); box(18, 9, 3, 3, 0xfff7c8d8)
-                box(8, 21, 16, 3, 0xffd2d2d2); box(10, 25, 12, 2, 0xffb8b8b8)
-                if (key == 'baby_wipes') { box(11, 4, 10, 3, 0xff8fc8df); box(14, 2, 4, 3, 0xffffffff) }
+                box(8, 21, 16, 3, 0xffd2d2d2)
+                if (key == 'baby_wipes') { box(11, 4, 10, 3, 0xff8fc8df); box(14, 2, 4, 3, white) }
             } else if (key == 'storybook') {
-                box(5, 3, 23, 27, outline); box(7, 4, 19, 24, 0xffde5d64)
+                box(5, 3, 23, 27, dark); box(7, 4, 19, 24, 0xffde5d64)
                 box(9, 7, 15, 12, 0xff84c9e8); oval(12, 9, 9, 9, 0xffffdc65)
                 box(9, 21, 15, 1, 0xfffff0d0); box(9, 24, 11, 1, 0xfffff0d0)
-            } else if (key == 'baby_food_jar' || key == 'applesauce' || key == 'cereal_bowl') {
-                box(7, 8, 18, 3, outline); box(9, 10, 14, 18, 0xfff6e8cd)
+            } else if (key in ['baby_food_jar', 'applesauce', 'cereal_bowl']) {
+                box(7, 8, 18, 3, dark); box(9, 10, 14, 18, 0xfff6e8cd)
                 box(10, 14, 12, 10, key == 'applesauce' ? 0xffd57935 : 0xffe9bd67)
-                box(10, 12, 12, 2, 0xfffff2d5); box(11, 25, 10, 2, 0xffd0b38b)
+                box(10, 12, 12, 2, 0xfffff2d5)
                 if (key == 'baby_food_jar') { box(13, 1, 6, 7, 0xff8dcc68); box(14, 3, 4, 3, 0xffffc84d) }
                 if (key == 'cereal_bowl') { oval(6, 10, 20, 13, 0xffd8eaf2); oval(8, 11, 16, 8, 0xfff2d89b); oval(11, 12, 3, 3, 0xffbd6638); oval(18, 14, 3, 3, 0xffbd6638) }
             } else if (key in ['cookies', 'cupcake', 'pancakes', 'baby_biscuits']) {
-                int pastry = key == 'cupcake' ? 0xffdf8fb0 : 0xffc98a4e
                 if (key == 'pancakes') {
                     oval(5, 20, 22, 8, 0xffa96735); oval(6, 16, 20, 8, 0xffd99b58); oval(7, 12, 18, 8, 0xffedc878)
-                    box(13, 10, 7, 3, 0xfffff0d0); box(15, 8, 3, 3, 0xfffff7dd)
+                    box(13, 10, 7, 3, 0xfffff0d0)
                 } else if (key == 'cupcake') {
-                    box(9, 17, 14, 12, 0xffbe5b57); box(7, 12, 18, 8, pastry); oval(10, 6, 12, 12, 0xffffd0e3); oval(14, 3, 5, 5, 0xffffe9a1)
+                    box(9, 17, 14, 12, 0xffbe5b57); box(7, 12, 18, 8, 0xffdf8fb0)
+                    oval(10, 6, 12, 12, 0xffffd0e3); oval(14, 3, 5, 5, 0xffffe9a1)
                 } else {
-                    oval(5, 8, 22, 18, pastry); oval(7, 9, 18, 14, 0xffe3b676)
-                    oval(10, 12, 3, 3, outline); oval(19, 15, 3, 3, outline); oval(13, 20, 3, 3, outline)
+                    oval(5, 8, 22, 18, 0xffc98a4e); oval(7, 9, 18, 14, 0xffe3b676)
+                    oval(10, 12, 3, 3, dark); oval(19, 15, 3, 3, dark)
                 }
-            } else if (key == 'building_blocks' || key == 'toy_train' || key == 'toy_ball' || key == 'rattle' || key == 'baby_rattle' || key == 'musical_toy' || key == 'toy_mobile' || key == 'teething_ring' || key == 'pacifier_clip' || key == 'teething_ring') {
-                int toyColor = 0xff000000 | (0x505050 + Math.abs(hash % 0x9f9f9f))
-                if (key == 'toy_ball') { oval(4, 4, 24, 24, outline); oval(6, 6, 20, 20, toyColor); box(8, 12, 16, 3, 0xfff7f1dc); box(15, 7, 3, 18, 0xfff7f1dc) }
-                else if (key == 'toy_train') { box(4, 12, 24, 11, toyColor); box(8, 7, 11, 8, 0xffe7d4a0); box(18, 5, 7, 14, toyColor); oval(6, 21, 7, 7, outline); oval(20, 21, 7, 7, outline) }
-                else if (key == 'building_blocks') { box(5, 16, 10, 10, 0xffe85b58); box(16, 16, 11, 10, 0xff5c9ed3); box(10, 6, 12, 9, 0xffffd45a); oval(8, 13, 4, 4, 0xffff8c46); oval(19, 13, 4, 4, 0xff75c66b) }
+            } else if (key in ['building_blocks', 'toy_train', 'toy_ball', 'rattle', 'baby_rattle', 'musical_toy', 'toy_mobile', 'teething_ring', 'pacifier_clip']) {
+                if (key == 'toy_ball') { oval(4, 4, 24, 24, dark); oval(6, 6, 20, 20, 0xff5c9ed3); box(8, 12, 16, 3, white); box(15, 7, 3, 18, white) }
+                else if (key == 'toy_train') { box(4, 12, 24, 11, 0xff5c9ed3); box(8, 7, 11, 8, 0xffe7d4a0); box(18, 5, 7, 14, 0xff5c9ed3); oval(6, 21, 7, 7, dark); oval(20, 21, 7, 7, dark) }
+                else if (key == 'building_blocks') { box(5, 16, 10, 10, 0xffe85b58); box(16, 16, 11, 10, 0xff5c9ed3); box(10, 6, 12, 9, 0xffffd45a) }
                 else if (key == 'teething_ring') { oval(5, 5, 22, 22, 0xff62bad1); oval(10, 10, 12, 12, 0x00000000); box(14, 4, 5, 4, 0xffffd564) }
                 else if (key == 'pacifier_clip') { oval(10, 5, 12, 12, 0xffff8eae); box(14, 15, 4, 8, 0xffeeeeee); oval(8, 22, 16, 6, 0xff8fc9dc) }
-                else { box(14, 4, 4, 16, toyColor); oval(7, 1, 18, 11, 0xffffd65b); box(11, 19, 10, 8, 0xffe8a7b6); oval(13, 21, 6, 6, 0xfff3d16b) }
+                else { box(14, 4, 4, 16, 0xffe8a7b6); oval(7, 1, 18, 11, 0xffffd65b); oval(13, 21, 6, 6, 0xfff3d16b) }
             } else {
-                // Distinct gift/toy-shaped fallback, keyed by id rather than stripes.
-                int main = 0xff000000 | (0x606060 + Math.abs(hash % 0x8f8f8f))
-                box(7, 8, 18, 18, outline); box(9, 10, 14, 14, main)
-                box(14, 7, 4, 20, accent); box(7, 15, 18, 4, accent)
-                oval(11, 4, 5, 5, 0xffffe59a); oval(17, 4, 5, 5, 0xffffe59a)
+                box(7, 8, 18, 18, dark); box(9, 10, 14, 14, 0xff62a8c8)
+                box(14, 7, 4, 20, 0xfff0d060); box(7, 15, 18, 4, 0xfff0d060)
             }
             g.dispose()
             ImageIO.write(image, 'png', file)
@@ -250,14 +239,12 @@ def generateLittleCraftAssets = tasks.register('generateLittleCraftAssets') {
 }
 
 sourceSets.main.resources.srcDir(generateLittleCraftAssets)
-
 tasks.withType(ProcessResources).configureEach {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 tasks.named('sourcesJar').configure {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
-
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
