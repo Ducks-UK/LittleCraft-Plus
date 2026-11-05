@@ -27,13 +27,13 @@ public class HighChairBlock extends Block {
         }
 
         AABB chairArea = new AABB(pos).inflate(0.75);
-        serverLevel.getEntitiesOfClass(ArmorStand.class, chairArea, stand -> stand.isInvisible() && stand.isPassenger() == false)
-                .stream().findFirst().ifPresent(stand -> stand.discard());
+        serverLevel.getEntitiesOfClass(ArmorStand.class, chairArea,
+                        stand -> stand.isInvisible() && !stand.isPassenger())
+                .stream().findFirst().ifPresent(ArmorStand::discard);
 
         ArmorStand seat = new ArmorStand(level, pos.getX() + 0.5D, pos.getY() + 0.35D, pos.getZ() + 0.5D);
         seat.setInvisible(true);
         seat.setNoGravity(true);
-        seat.setSmall(true);
         if (serverLevel.addFreshEntity(seat) && player.startRiding(seat)) {
             return InteractionResult.CONSUME;
         }
