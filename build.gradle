@@ -20,10 +20,6 @@ java {
     withSourcesJar()
 }
 
-sourceSets.main.resources {
-    srcDir 'src/generated/resources'
-}
-
 neoForge {
     version = project.neo_version
 
@@ -71,12 +67,15 @@ def generateModMetadata = tasks.register('generateModMetadata', ProcessResources
 sourceSets.main.resources.srcDir(generateModMetadata)
 neoForge.ideSyncTask generateModMetadata
 
-// Generate original pixel-art icons, decorative block models, and recipes.
+// Generate original item textures, decorative block models, and recipes into
+// build/ instead of the source tree. The task provider is also the resource
+// source, so Gradle automatically orders processResources and sourcesJar after it.
+def generatedAssetsDir = layout.buildDirectory.dir('generated/littleCraftAssets')
 def generateLittleCraftAssets = tasks.register('generateLittleCraftAssets') {
-    def outputRoot = layout.projectDirectory.dir('src/generated/resources').asFile
-    outputs.dir(outputRoot)
+    outputs.dir(generatedAssetsDir)
 
     doLast {
+        def outputRoot = generatedAssetsDir.get().asFile
         def itemIds = [
                 'coffee', 'iced_coffee', 'hot_chocolate', 'vanilla_latte', 'strawberry_milk',
                 'babyccino', 'chocolate_milk', 'apple_juice', 'orange_juice', 'warm_milk',
@@ -171,15 +170,9 @@ def generateLittleCraftAssets = tasks.register('generateLittleCraftAssets') {
     }
 }
 
-tasks.named('processResources').configure {
-    dependsOn(generateLittleCraftAssets)
-}
-
-// Generated files live in the main resource source set, so sourceJar must wait
-// for their generation too (otherwise Gradle's task validation fails).
-tasks.named('sourcesJar').configure {
-    dependsOn(generateLittleCraftAssets)
-}
+// Register the task-backed output as a resource source; Gradle adds the task
+// dependency to both the regular jar and sources jar automatically.
+sourceSets.main.resources.srcDir(generateLittleCraftAssets)
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
